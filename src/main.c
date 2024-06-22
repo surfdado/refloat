@@ -183,7 +183,7 @@ typedef struct {
 
     // Feature: Flywheel
     bool flywheel_abort;
-    float flywheel_pitch_offset, flywheel_roll_offset;
+    float flywheel_pitch_offset;
 
     // Feature: Reverse Stop
     float reverse_stop_step_size, reverse_tolerance, reverse_total_erpm;
@@ -700,6 +700,16 @@ static bool check_faults(data *d) {
         d->fault_angle_pitch_timer = d->current_time;
     }
 
+    if (d->state.mode == MODE_FLYWHEEL) {
+        // Flywheel mode doesn't reach high speeds when stable
+        if ((d->motor.duty_cycle > 0.9) || (d->motor.abs_erpm > 15000))  {
+            // cover HV setups with erpm, LV setups with duty cycle
+            // Use roll fault since those are disabled in flywheel mode
+            state_stop(&d->state, STOP_ROLL);
+            d->flywheel_abort = true;
+            return true;
+        }
+    }
     return false;
 }
 
@@ -1128,14 +1138,8 @@ static void refloat_thd(void *arg) {
 
         if (d->state.mode == MODE_FLYWHEEL) {
             // flip sign and use offsets
-            d->pitch = d->flywheel_pitch_offset - d->pitch;
-            d->balance_pitch = d->pitch;
-            d->roll -= d->flywheel_roll_offset;
-            if (d->roll < -200) {
-                d->roll += 360;
-            } else if (d->roll > 200) {
-                d->roll -= 360;
-            }
+            d->balance_pitch = d->flywheel_pitch_offset - d->balance_pitch;
+            d->pitch = d->balance_pitch;
         } else if (d->state.darkride) {
             d->balance_pitch = -d->balance_pitch - d->darkride_setpoint_correction;
             d->pitch = -d->pitch - d->darkride_setpoint_correction;
@@ -2188,13 +2192,12 @@ static void cmd_flywheel_toggle(data *d, unsigned char *cfg, int len) {
     if (d->state.mode == MODE_FLYWHEEL) {
         if ((d->flywheel_pitch_offset == 0) || (command == 2)) {
             // accidental button press?? board isn't evn close to being upright
-            if (fabsf(d->pitch) < 70) {
+            if (fabsf(d->balance_pitch) < 70) {
                 d->state.mode = MODE_NORMAL;
                 return;
             }
 
-            d->flywheel_pitch_offset = d->pitch;
-            d->flywheel_roll_offset = d->roll;
+            d->flywheel_pitch_offset = d->balance_pitch;
             beep_alert(d, 1, 1);
         } else {
             beep_alert(d, 3, 0);
@@ -2204,18 +2207,19 @@ static void cmd_flywheel_toggle(data *d, unsigned char *cfg, int len) {
         // Tighter startup/fault tolerances
         d->startup_pitch_tolerance = 0.2;
         d->float_conf.startup_pitch_tolerance = 0.2;
-        d->float_conf.startup_roll_tolerance = 25;
-        d->float_conf.fault_pitch = 6;
-        d->float_conf.fault_roll = 35;  // roll can fluctuate significantly in the upright position
-        if (command & 0x4) {
-            d->float_conf.fault_roll = 90;
-        }
-        d->float_conf.fault_delay_pitch = 50;  // 50ms delay should help filter out IMU noise
-        d->float_conf.fault_delay_roll = 50;  // 50ms delay should help filter out IMU noise
+        d->float_conf.fault_pitch = 8;
+
+        // ignore roll entirely
+        d->float_conf.startup_roll_tolerance = 180;
+        d->float_conf.fault_roll = 360;
+
+        d->float_conf.fault_delay_pitch = 20;  // 20ms delay should help filter out IMU noise
 
         // Aggressive P with some D (aka Rate-P) for Mahony kp=0.3
-        d->float_conf.kp = 8.0;
-        d->float_conf.kp2 = 0.3;
+        d->float_conf.mahony_kp = 0.2;
+        d->float_conf.mahony_kp_roll = 0.2;
+        d->float_conf.kp = 8.5;
+        d->float_conf.kp2 = 0.7;
 
         if (cfg[1] > 0) {
             d->float_conf.kp = cfg[1] * 0.1f;
@@ -2224,20 +2228,19 @@ static void cmd_flywheel_toggle(data *d, unsigned char *cfg, int len) {
             d->float_conf.kp2 = cfg[2] * 0.01f;
         }
 
-        d->float_conf.tiltback_duty_angle = 2;
+        d->float_conf.tiltback_duty_angle = 0.5;
         d->float_conf.tiltback_duty = 0.1;
-        d->float_conf.tiltback_duty_speed = 5;
+        d->float_conf.tiltback_duty_speed = 1;
         d->float_conf.tiltback_return_speed = 5;
 
         if (cfg[3] > 0) {
-            d->float_conf.tiltback_duty_angle = cfg[3] * 0.1f;
+            d->float_conf.tiltback_duty_angle = cfg[3] * 0.02f;
         }
         if (cfg[4] > 0) {
             d->float_conf.tiltback_duty = cfg[4] * 0.01f;
         }
         if ((len > 6) && (cfg[6] > 1) && (cfg[6] < 100)) {
-            d->float_conf.tiltback_duty_speed = cfg[6] * 0.5f;
-            d->float_conf.tiltback_return_speed = cfg[6] * 0.5f;
+            d->float_conf.tiltback_duty_speed = cfg[6] * 0.2f;
         }
         d->tiltback_duty_step_size = d->float_conf.tiltback_duty_speed / d->float_conf.hertz;
         d->tiltback_return_step_size = d->float_conf.tiltback_return_speed / d->float_conf.hertz;
@@ -2265,7 +2268,6 @@ static void cmd_flywheel_toggle(data *d, unsigned char *cfg, int len) {
         d->float_conf.brake_current = 0;
         d->float_conf.fault_darkride_enabled = false;
         d->float_conf.fault_reversestop_enabled = false;
-        d->float_conf.tiltback_constant = 0;
         d->tiltback_variable_max_erpm = 0;
         d->tiltback_variable = 0;
     } else {
