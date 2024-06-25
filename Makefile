@@ -19,6 +19,10 @@ else
     MINIFY_CMD="cat"
 endif
 
+clang:
+	clang-format-17 -i src/*.c src/*.h
+	echo "\n\nREMINDER !!!!\nDon't forget to add a Feature: ... annotation at the end of the commit msg\n"
+
 package_README-gen.md: package_README.md version
 	cp $< $@
 	echo "" >> $@
