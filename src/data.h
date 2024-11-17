@@ -110,6 +110,7 @@ typedef struct {
     bool is_upside_down_started;  // dark ride has been engaged
     bool enable_upside_down;  // dark ride mode is enabled (10 seconds after fault)
     time_t upside_down_fault_timer;
+    float darkride_setpoint_correction;
 
     // Feature: Flywheel
     bool flywheel_abort;

@@ -211,6 +211,10 @@ static void configure(Data *d) {
     d->reverse_tolerance = 20000;
     d->reverse_stop_step_size = 100.0 / d->float_conf.hertz;
 
+    // Feature: Darkride
+    d->enable_upside_down = false;
+    d->darkride_setpoint_correction = d->float_conf.dark_pitch_offset;
+
     // Speed above which to warn users about an impending full switch fault
     d->switch_warn_beep_erpm = d->float_conf.is_footbeep_enabled ? 2000 : 100000;
 
@@ -782,6 +786,11 @@ static void refloat_thd(void *arg) {
                     d->is_upside_down_started = false;
                 }
             }
+        }
+
+        if (d->state.darkride) {
+            d->imu.balance_pitch -= d->darkride_setpoint_correction;
+            d->imu.pitch -= d->darkride_setpoint_correction;
         }
 
         motor_data_update(&d->motor);
