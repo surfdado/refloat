@@ -1215,6 +1215,7 @@ enum {
     COMMAND_LOCK = 12,
     COMMAND_HANDTEST = 13,
     COMMAND_TUNE_TILT = 14,
+    COMMAND_TUNE_HAPTIC = 15,
     COMMAND_FLYWHEEL = 22,
     COMMAND_REALTIME_DATA = 31,
     COMMAND_DATA_RECORD_REQUEST = 41,
@@ -1634,8 +1635,26 @@ static void cmd_runtime_tune_tilt(Data *d, unsigned char *cfg, int len) {
     d->float_conf.tiltback_duty = (float) cfg[2] / 100.0;
     d->float_conf.tiltback_duty_angle = (float) cfg[3] / 10.0;
     d->float_conf.tiltback_duty_speed = (float) cfg[4] / 10.0;
+}
 
-    beep_alert(d, 3, 0);
+/**
+ * cmd_runtime_tune_haptic: Extract settings from 20byte message but don't write to EEPROM!
+ */
+static void cmd_runtime_tune_haptic(Data *d, unsigned char *cfg, int len) {
+    unused(len);
+    // using one byte, frequencies can be 350..605Hz
+    d->float_conf.haptic.duty.frequency = cfg[0] + 350;
+    d->float_conf.haptic.duty.strength = ((float) cfg[1]) / 10;
+    d->float_conf.haptic.error.frequency = cfg[2] + 350;
+    d->float_conf.haptic.error.strength = ((float) cfg[3]) / 10;
+    // frequency can be 0..255Hz
+    d->float_conf.haptic.vibrate.frequency = cfg[4];
+    d->float_conf.haptic.vibrate.strength = ((float) cfg[5]) / 10;
+    d->float_conf.haptic.duty_solid_offset = ((float) cfg[6]) / 100;
+    d->float_conf.haptic.current_threshold = ((float) cfg[7]) / 100;
+    d->float_conf.haptic.min_strength = ((float) cfg[8]) / 100;
+    d->float_conf.haptic.max_strength_speed = ((float) cfg[9]) / 100;
+    d->float_conf.haptic.strength_curvature = ((float) cfg[10]) / 1000;
 }
 
 /**
@@ -2065,6 +2084,14 @@ static void on_command_received(unsigned char *buffer, unsigned int len) {
     case COMMAND_TUNE_TILT: {
         if (len >= 7) {
             cmd_runtime_tune_tilt(d, &buffer[2], len - 2);
+        } else {
+            log_error("Command data length incorrect: %u", len);
+        }
+        return;
+    }
+    case COMMAND_TUNE_HAPTIC: {
+        if (len >= 13) {
+            cmd_runtime_tune_haptic(d, &buffer[2], len - 2);
         } else {
             log_error("Command data length incorrect: %u", len);
         }
