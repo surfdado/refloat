@@ -605,13 +605,12 @@ static void calculate_setpoint_target(Data *d) {
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_hv_angle;
             }
-
-            d->state.sat = SAT_PB_HIGH_VOLTAGE;
         } else {
             // The rider has 500ms to react to the triple-beep, or maybe it was just a short spike
-            d->state.sat = SAT_NONE;
+            d->setpoint_target = 0;
         }
-
+        // setting the state regardless to ensure haptic buzz starts right away
+        d->state.sat = SAT_PB_HIGH_VOLTAGE;
     } else if (bms_get_fault(d->bms_fault, BMSF_CONNECTION)) {
         beep_alert(d, 3, true);
         d->beep_reason = BEEP_BMS_CONNECTION;
