@@ -28,7 +28,8 @@ typedef enum {
     HAPTIC_FEEDBACK_DUTY,
     HAPTIC_FEEDBACK_DUTY_CONTINUOUS,
     HAPTIC_FEEDBACK_ERROR_TEMPERATURE,
-    HAPTIC_FEEDBACK_ERROR_VOLTAGE,
+    HAPTIC_FEEDBACK_ERROR_LO_VOLTAGE,
+    HAPTIC_FEEDBACK_ERROR_HI_VOLTAGE,
     HAPTIC_FEEDBACK_ERROR_BMS_COMMUNICATION
 } HapticFeedbackType;
 
@@ -40,6 +41,7 @@ typedef struct {
 
     HapticFeedbackType type_playing;
     time_t tone_timer;
+    time_t hv_start_time;
     bool is_playing;
 } HapticFeedback;
 

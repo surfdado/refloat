@@ -53,8 +53,9 @@ static HapticFeedbackType state_to_haptic_type(const State *state) {
     case SAT_PB_TEMPERATURE:
         return HAPTIC_FEEDBACK_ERROR_TEMPERATURE;
     case SAT_PB_LOW_VOLTAGE:
+        return HAPTIC_FEEDBACK_ERROR_LO_VOLTAGE;
     case SAT_PB_HIGH_VOLTAGE:
-        return HAPTIC_FEEDBACK_ERROR_VOLTAGE;
+        return HAPTIC_FEEDBACK_ERROR_HI_VOLTAGE;
     case SAT_PB_BMS_CONNECTION:
         return HAPTIC_FEEDBACK_ERROR_BMS_COMMUNICATION;
     default:
@@ -73,7 +74,8 @@ static uint8_t get_beats(HapticFeedbackType type) {
         return 0;
     case HAPTIC_FEEDBACK_ERROR_TEMPERATURE:
         return 6;
-    case HAPTIC_FEEDBACK_ERROR_VOLTAGE:
+    case HAPTIC_FEEDBACK_ERROR_LO_VOLTAGE:
+    case HAPTIC_FEEDBACK_ERROR_HI_VOLTAGE:
         return 8;
     case HAPTIC_FEEDBACK_ERROR_BMS_COMMUNICATION:
         return 10;
@@ -90,7 +92,8 @@ static const CfgHapticTone *get_haptic_tone(const HapticFeedback *hf) {
     case HAPTIC_FEEDBACK_DUTY_CONTINUOUS:
         return &hf->cfg->duty;
     case HAPTIC_FEEDBACK_ERROR_TEMPERATURE:
-    case HAPTIC_FEEDBACK_ERROR_VOLTAGE:
+    case HAPTIC_FEEDBACK_ERROR_LO_VOLTAGE:
+    case HAPTIC_FEEDBACK_ERROR_HI_VOLTAGE:
     case HAPTIC_FEEDBACK_ERROR_BMS_COMMUNICATION:
         return &hf->cfg->error;
     case HAPTIC_FEEDBACK_NONE:
@@ -118,6 +121,9 @@ void haptic_feedback_update(
     HapticFeedbackType type_to_play = state_to_haptic_type(state);
     if (type_to_play == HAPTIC_FEEDBACK_DUTY && md->duty_cycle > hf->duty_solid_threshold) {
         type_to_play = HAPTIC_FEEDBACK_DUTY_CONTINUOUS;
+    }
+    if (type_to_play != HAPTIC_FEEDBACK_ERROR_HI_VOLTAGE) {
+        hf->hv_start_time = time->now;
     }
 
     if (type_to_play == HAPTIC_FEEDBACK_NONE && hf->cfg->current_threshold > 0.0f &&
@@ -152,7 +158,17 @@ void haptic_feedback_update(
     } else if (should_be_playing) {
         const CfgHapticTone *tone = get_haptic_tone(hf);
         if (tone->strength > 0.0f) {
-            foc_play_tone(0, tone->frequency, tone->strength * strength_scale(hf, md->speed));
+            float strength = tone->strength * strength_scale(hf, md->speed);
+            if (type_to_play == HAPTIC_FEEDBACK_ERROR_HI_VOLTAGE && tone->strength < 10.0f) {
+                float duration = timer_age(time, hf->hv_start_time);
+                if (duration > 3) {
+                    // more than 3 seconds in HV? Start scaling up for next 2 seconds
+                    // up to 50% louder
+                    strength = strength * fminf(1.5, duration * 0.25 + 0.25);
+                    strength = fminf(strength, 12.0f);
+                }
+            }
+            foc_play_tone(0, tone->frequency, strength);
         }
 
         if (hf->cfg->vibrate.strength > 0.0f) {
