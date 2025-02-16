@@ -168,6 +168,9 @@ void haptic_feedback_update(
         hf->can_change_type = true;
     }
 
+    if (hf->suppress) {
+        should_be_playing = false;
+    }
     if (hf->is_playing && !should_be_playing) {
         foc_play_tone(0, 1, 0.0f);
         motor_control_stop_tone(mc);

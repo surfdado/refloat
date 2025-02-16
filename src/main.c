@@ -580,6 +580,9 @@ static void calculate_setpoint_target(Data *d) {
         } else {
             d->setpoint_target = -d->float_conf.tiltback_duty_angle;
         }
+        if (d->suppress_tiltback) {
+            d->setpoint_target = 0;
+        }
 
         // FLYWHEEL relies on the duty pushback mechanism, but we don't
         // want to show the pushback alert.
@@ -608,7 +611,9 @@ static void calculate_setpoint_target(Data *d) {
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_hv_angle;
             }
-
+            if (d->suppress_tiltback) {
+                d->setpoint_target = 0;
+            }
             d->state.sat = SAT_PB_HIGH_VOLTAGE;
         } else {
             // The rider has 500ms to react to the triple-beep, or maybe it was just a short spike
@@ -634,6 +639,9 @@ static void calculate_setpoint_target(Data *d) {
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_lv_angle;
             }
+            if (d->suppress_tiltback) {
+                d->setpoint_target = 0;
+            }
             d->state.sat = SAT_PB_TEMPERATURE;
         } else {
             // The rider has 1 degree Celsius left before we start tilting back
@@ -648,6 +656,9 @@ static void calculate_setpoint_target(Data *d) {
                 d->setpoint_target = d->float_conf.tiltback_lv_angle;
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_lv_angle;
+            }
+            if (d->suppress_tiltback) {
+                d->setpoint_target = 0;
             }
             d->state.sat = SAT_PB_TEMPERATURE;
         } else {
@@ -670,6 +681,9 @@ static void calculate_setpoint_target(Data *d) {
             d->setpoint_target = d->float_conf.tiltback_lv_angle;
         } else {
             d->setpoint_target = -d->float_conf.tiltback_lv_angle;
+        }
+        if (d->suppress_tiltback) {
+            d->setpoint_target = 0;
         }
         d->state.sat = SAT_PB_TEMPERATURE;
     } else if (d->motor.duty_cycle > 0.05 &&
@@ -694,6 +708,9 @@ static void calculate_setpoint_target(Data *d) {
                 d->setpoint_target = d->float_conf.tiltback_lv_angle;
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_lv_angle;
+            }
+            if (d->suppress_tiltback) {
+                d->setpoint_target = 0;
             }
 
             d->state.sat = SAT_PB_LOW_VOLTAGE;
@@ -1658,6 +1675,8 @@ static void cmd_runtime_tune_tilt(Data *d, unsigned char *cfg, int len) {
     unsigned int flags = cfg[0];
     bool duty_beep = flags & 0x1;
     d->float_conf.is_dutybeep_enabled = duty_beep;
+    d->haptic_feedback.suppress = flags & 0x2;
+    d->suppress_tiltback = flags & 0x4;
     float retspeed = cfg[1];
     if (retspeed > 0) {
         d->float_conf.tiltback_return_speed = retspeed / 10;

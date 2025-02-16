@@ -111,6 +111,9 @@ typedef struct {
     float switch_warn_beep_erpm;
     bool traction_control;
 
+    // Suppress tiltback temporarily
+    bool suppress_tiltback;
+
     // Darkride aka upside down mode:
     bool is_upside_down_started;  // dark ride has been engaged
     bool enable_upside_down;  // dark ride mode is enabled (10 seconds after fault)
