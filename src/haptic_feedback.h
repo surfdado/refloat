@@ -43,6 +43,7 @@ typedef struct {
     time_t tone_timer;
     time_t hv_start_time;
     bool is_playing;
+    bool suppress;
 } HapticFeedback;
 
 void haptic_feedback_init(HapticFeedback *hf);
