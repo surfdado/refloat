@@ -1029,7 +1029,7 @@ p, li { white-space: pre-wrap; }
             <minInt>300</minInt>
             <showDisplay>0</showDisplay>
             <stepInt>10</stepInt>
-            <valInt>400</valInt>
+            <valInt>430</valInt>
             <suffix> Hz</suffix>
             <vTx>3</vTx>
         </haptic.duty.frequency>
@@ -1054,7 +1054,7 @@ p, li { white-space: pre-wrap; }
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.5</stepDouble>
-            <valDouble>1</valDouble>
+            <valDouble>3</valDouble>
             <vTxDoubleScale>10</vTxDoubleScale>
             <suffix> V</suffix>
             <vTx>7</vTx>
@@ -1075,7 +1075,7 @@ p, li { white-space: pre-wrap; }
             <minInt>300</minInt>
             <showDisplay>0</showDisplay>
             <stepInt>10</stepInt>
-            <valInt>500</valInt>
+            <valInt>590</valInt>
             <suffix> Hz</suffix>
             <vTx>3</vTx>
         </haptic.error.frequency>
@@ -1100,7 +1100,7 @@ p, li { white-space: pre-wrap; }
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.5</stepDouble>
-            <valDouble>1</valDouble>
+            <valDouble>3</valDouble>
             <vTxDoubleScale>10</vTxDoubleScale>
             <suffix> V</suffix>
             <vTx>7</vTx>
@@ -1238,11 +1238,11 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>1</maxDouble>
+            <maxDouble>0.2</maxDouble>
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.02</stepDouble>
-            <valDouble>0.1</valDouble>
+            <valDouble>0.04</valDouble>
             <vTxDoubleScale>1000</vTxDoubleScale>
             <suffix></suffix>
             <vTx>7</vTx>
@@ -1262,11 +1262,11 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>1</maxDouble>
+            <maxDouble>0.05</maxDouble>
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.001</stepDouble>
-            <valDouble>0.005</valDouble>
+            <valDouble>0.004</valDouble>
             <vTxDoubleScale>1000</vTxDoubleScale>
             <suffix></suffix>
             <vTx>7</vTx>
