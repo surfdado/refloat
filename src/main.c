@@ -2218,8 +2218,8 @@ static void cmd_flywheel_toggle(data *d, unsigned char *cfg, int len) {
         // Aggressive P with some D (aka Rate-P) for Mahony kp=0.3
         d->float_conf.mahony_kp = 0.2;
         d->float_conf.mahony_kp_roll = 0.2;
-        d->float_conf.kp = 8.5;
-        d->float_conf.kp2 = 0.7;
+        d->float_conf.kp = 5.0;
+        d->float_conf.kp2 = 1.2;
 
         if (cfg[1] > 0) {
             d->float_conf.kp = cfg[1] * 0.1f;
