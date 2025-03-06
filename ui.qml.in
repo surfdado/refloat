@@ -1405,6 +1405,12 @@ Item {
                     ColumnLayout {
                         anchors.fill: parent
 
+                        Heading {
+                            text: "REFLOAT FOR ADV2"
+                            font.pointSize: 16
+                            font.bold: true
+                        }
+
                         IntTextField {
                             label: "Speed dial max"
                             valueUnit: vescConfig.speedUnit
@@ -1494,6 +1500,12 @@ Item {
 
                     ColumnLayout {
                         anchors.fill: parent
+
+                        Heading {
+                            text: "REFLOAT FOR ADV2"
+                            font.pointSize: 16
+                            font.bold: true
+                        }
 
                         Heading {
                             text: "Disable Package"
@@ -1926,7 +1938,7 @@ Item {
         }
 
         Page {
-            title: "Welcome to Refloat"
+            title: "Welcome to Refloat for ADV2"
             anchors.centerIn: parent
             width: parent.width - 20
             padding: 10

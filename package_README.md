@@ -1,4 +1,4 @@
-# Refloat
+# Refloat for ADV2
 Self-balancing skateboard package based on the Float package by Mitch Lustig, Dado Mista and Nico Aleman: Float, Refactored.
 
 The feature set of Refloat is the same as that of Float version 1.3, with the following features ported from Float 2.0:
