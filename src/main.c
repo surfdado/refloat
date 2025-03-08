@@ -2412,7 +2412,7 @@ static void on_command_received(unsigned char *buffer, unsigned int len) {
         send_buffer[ind++] = 101;  // magic nr.
         send_buffer[ind++] = 0x0;  // command ID
         send_buffer[ind++] = (uint8_t) (10 * PACKAGE_MAJOR_MINOR_VERSION);
-        send_buffer[ind++] = 2;  // build number
+        send_buffer[ind++] = 88;  // build number: 88 = ADV2 Special
         // Send the full type here. This is redundant with cmd_light_info. It
         // likely shouldn't be here, as the type can be reconfigured and the
         // app would need to reconnect to pick up the change from this command.
