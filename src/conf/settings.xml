@@ -272,8 +272,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>1</maxDouble>
-            <minDouble>0</minDouble>
+            <maxDouble>0.01</maxDouble>
+            <minDouble>0.01</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.002</stepDouble>
             <valDouble>0.01</valDouble>
@@ -294,8 +294,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>1</maxDouble>
-            <minDouble>0.001</minDouble>
+            <maxDouble>0.004</maxDouble>
+            <minDouble>0.004</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.001</stepDouble>
             <valDouble>0.004</valDouble>
@@ -316,8 +316,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>1</maxDouble>
-            <minDouble>0.001</minDouble>
+            <maxDouble>0.05</maxDouble>
+            <minDouble>0.05</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.01</stepDouble>
             <valDouble>0.05</valDouble>
@@ -340,8 +340,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>0</editorDecimalsDouble>
             <editorScale>1000</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>2</maxDouble>
-            <minDouble>0.02</minDouble>
+            <maxDouble>0.36</maxDouble>
+            <minDouble>0.36</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>20</stepDouble>
             <valDouble>0.36</valDouble>
@@ -362,8 +362,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>2</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>10</maxDouble>
-            <minDouble>0.1</minDouble>
+            <maxDouble>2</maxDouble>
+            <minDouble>2</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.2</stepDouble>
             <valDouble>2</valDouble>
@@ -387,8 +387,8 @@ p, li { white-space: pre-wrap; }
             <cDefine>CFG_DFLT_HERTZ</cDefine>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxInt>4000</maxInt>
-            <minInt>50</minInt>
+            <maxInt>2000</maxInt>
+            <minInt>200</minInt>
             <showDisplay>0</showDisplay>
             <stepInt>16</stepInt>
             <valInt>832</valInt>
@@ -1214,8 +1214,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>1</maxDouble>
-            <minDouble>0</minDouble>
+            <maxDouble>0.1</maxDouble>
+            <minDouble>0.1</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.05</stepDouble>
             <valDouble>0.1</valDouble>
@@ -1238,8 +1238,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>0.2</maxDouble>
-            <minDouble>0</minDouble>
+            <maxDouble>0.04</maxDouble>
+            <minDouble>0.04</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.02</stepDouble>
             <valDouble>0.04</valDouble>
@@ -1262,8 +1262,8 @@ p, li { white-space: pre-wrap; }
             <editorDecimalsDouble>3</editorDecimalsDouble>
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
-            <maxDouble>0.05</maxDouble>
-            <minDouble>0</minDouble>
+            <maxDouble>0.004</maxDouble>
+            <minDouble>0.004</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.001</stepDouble>
             <valDouble>0.004</valDouble>
@@ -3937,13 +3937,6 @@ p, li { white-space: pre-wrap; }
                     <param>atr_threshold_up</param>
                     <param>atr_threshold_down</param>
                     <param>atr_speed_boost</param>
-                    <param>::sep::Filtering (also for Torque Tilt and Input Tilt)</param>
-                    <param>target_filter.type</param>
-                    <param>target_filter.alpha</param>
-                    <param>target_filter.in_alpha_away</param>
-                    <param>target_filter.in_alpha_back</param>
-                    <param>target_filter.ema_half_time</param>
-                    <param>target_filter.ema_return_multiplier</param>
                     <param>::sep::Nose Angling</param>
                     <param>atr_angle_limit</param>
                     <param>atr_on_speed</param>
@@ -4025,9 +4018,6 @@ p, li { white-space: pre-wrap; }
                     <param>haptic.vibrate.strength</param>
                     <param>haptic.duty_solid_threshold</param>
                     <param>haptic.current_threshold</param>
-                    <param>haptic.strength_a</param>
-                    <param>haptic.strength_b</param>
-                    <param>haptic.strength_c</param>
                 </subgroupParams>
             </subgroup>
             <subgroup>
@@ -4120,6 +4110,17 @@ p, li { white-space: pre-wrap; }
                     <param>hardware.leds.front.reverse</param>
                     <param>hardware.leds.rear.count</param>
                     <param>hardware.leds.rear.reverse</param>
+                    <param>::sep::Setpoint Filtering (read-only)</param>
+                    <param>target_filter.type</param>
+                    <param>target_filter.alpha</param>
+                    <param>target_filter.in_alpha_away</param>
+                    <param>target_filter.in_alpha_back</param>
+                    <param>target_filter.ema_half_time</param>
+                    <param>target_filter.ema_return_multiplier</param>
+                    <param>::sep::Haptic Buzz Polynomials (read-only)</param>
+                    <param>haptic.strength_a</param>
+                    <param>haptic.strength_b</param>
+                    <param>haptic.strength_c</param>
                 </subgroupParams>
             </subgroup>
         </group>
