@@ -17,9 +17,15 @@
 
 #include "bms.h"
 
-bool bms_is_fault_set(uint32_t fault_mask, BMSFaultCode fault_code) {
-    if (fault_code < 1 || fault_code > 32) {
-        return false;
-    }
+bool bms_get_fault(uint32_t fault_mask, BMSFaultCode fault_code) {
     return (fault_mask & (1U << (fault_code - 1))) != 0;
+}
+
+void bms_set_fault(uint32_t *fault_mask, BMSFaultCode fault_code) {
+    if (fault_code == BMSF_NONE) {
+        *fault_mask = BMSF_NONE;
+        return;
+    }
+
+    *fault_mask |= (1U << (fault_code - 1));
 }

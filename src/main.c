@@ -379,7 +379,11 @@ static void configure(data *d) {
         sizeof(headlights_off_konami_sequence)
     );
 
-    d->bms_fault = 0;
+    if (d->float_conf.tiltback_bms_enabled) {
+        d->bms_fault = BMSF_CONNECTION;
+    } else {
+        d->bms_fault = BMSF_NONE;
+    }
 
     reconfigure(d);
 
@@ -512,6 +516,7 @@ static float get_setpoint_adjustment_step_size(data *d) {
         return d->tiltback_duty_step_size;
     case (SAT_PB_HIGH_VOLTAGE):
     case (SAT_PB_TEMPERATURE):
+    case (SAT_PB_BMS_CONNECTION):
         return d->tiltback_hv_step_size;
     case (SAT_PB_LOW_VOLTAGE):
         return d->tiltback_lv_step_size;
@@ -717,7 +722,7 @@ static void calculate_setpoint_target(data *d) {
     float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 
     if (input_voltage < d->float_conf.tiltback_hv &&
-        !bms_is_fault_set(d->bms_fault, BMSF_CELL_OVER_VOLTAGE)) {
+        !bms_get_fault(d->bms_fault, BMSF_CELL_OVER_VOLTAGE)) {
         d->tb_highvoltage_timer = d->current_time;
     }
 
@@ -795,9 +800,9 @@ static void calculate_setpoint_target(data *d) {
         }
     } else if (d->motor.duty_cycle > 0.05 &&
                (input_voltage > d->float_conf.tiltback_hv ||
-                bms_is_fault_set(d->bms_fault, BMSF_CELL_OVER_VOLTAGE))) {
+                bms_get_fault(d->bms_fault, BMSF_CELL_OVER_VOLTAGE))) {
         if (d->float_conf.haptic.error.strength == 0) {
-            if (bms_is_fault_set(d->bms_fault, BMSF_CELL_OVER_VOLTAGE)) {
+            if (bms_get_fault(d->bms_fault, BMSF_CELL_OVER_VOLTAGE)) {
                 d->beep_reason = BEEP_CELL_HV;
             } else {
                 d->beep_reason = BEEP_HV;
@@ -806,7 +811,7 @@ static void calculate_setpoint_target(data *d) {
         }
         if (((d->current_time - d->tb_highvoltage_timer) > 5) ||
             (input_voltage > d->float_conf.tiltback_hv + 2)) {
-            //bms_is_fault_set(d->bms_fault, BMSF_CELL_OVER_VOLTAGE)) {
+            //bms_get_fault(d->bms_fault, BMSF_CELL_OVER_VOLTAGE)) {
             // It is assumed that haptic feedback is enabled!
             // 5s have passed or voltage is another volt higher, time for some tiltback
             if (d->motor.erpm > 0) {
@@ -823,6 +828,16 @@ static void calculate_setpoint_target(data *d) {
         }
         // setting the state regardless to ensure haptic buzz starts right away
         d->state.sat = SAT_PB_HIGH_VOLTAGE;
+    } else if (bms_get_fault(d->bms_fault, BMSF_CONNECTION)) {
+        beep_alert(d, 3, true);
+        d->beep_reason = BEEP_BMS_CONNECTION;
+
+        if (d->motor.erpm > 0) {
+            d->setpoint_target = d->float_conf.tiltback_hv_angle;
+        } else {
+            d->setpoint_target = -d->float_conf.tiltback_hv_angle;
+        }
+        d->state.sat = SAT_PB_BMS_CONNECTION;
     } else if (VESC_IF->mc_temp_fet_filtered() > d->mc_max_temp_fet) {
         // Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
         beep_alert(d, 3, true);
@@ -859,14 +874,14 @@ static void calculate_setpoint_target(data *d) {
             // The rider has 1 degree Celsius left before we start tilting back
             d->state.sat = SAT_NONE;
         }
-    } else if (bms_is_fault_set(d->bms_fault, BMSF_CELL_OVER_TEMP) ||
-               bms_is_fault_set(d->bms_fault, BMSF_CELL_UNDER_TEMP) ||
-               bms_is_fault_set(d->bms_fault, BMSF_OVER_TEMP)) {
+    } else if (bms_get_fault(d->bms_fault, BMSF_CELL_OVER_TEMP) ||
+               bms_get_fault(d->bms_fault, BMSF_CELL_UNDER_TEMP) ||
+               bms_get_fault(d->bms_fault, BMSF_OVER_TEMP)) {
         // Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
         beep_alert(d, 3, true);
-        if (bms_is_fault_set(d->bms_fault, BMSF_CELL_OVER_TEMP)) {
+        if (bms_get_fault(d->bms_fault, BMSF_CELL_OVER_TEMP)) {
             d->beep_reason = BEEP_TEMP_CELL_OVER;
-        } else if (bms_is_fault_set(d->bms_fault, BMSF_CELL_UNDER_TEMP)) {
+        } else if (bms_get_fault(d->bms_fault, BMSF_CELL_UNDER_TEMP)) {
             d->beep_reason = BEEP_TEMP_CELL_UNDER;
         } else {
             d->beep_reason = BEEP_BMS_TEMP_OVER;
@@ -882,9 +897,9 @@ static void calculate_setpoint_target(data *d) {
         d->state.sat = SAT_PB_TEMPERATURE;
     } else if (d->motor.duty_cycle > 0.05 &&
                (input_voltage < d->float_conf.tiltback_lv ||
-                bms_is_fault_set(d->bms_fault, BMSF_CELL_UNDER_VOLTAGE))) {
+                bms_get_fault(d->bms_fault, BMSF_CELL_UNDER_VOLTAGE))) {
         if (d->float_conf.haptic.error.strength == 0) {
-            if (bms_is_fault_set(d->bms_fault, BMSF_CELL_UNDER_VOLTAGE)) {
+            if (bms_get_fault(d->bms_fault, BMSF_CELL_UNDER_VOLTAGE)) {
                 d->beep_reason = BEEP_CELL_LV;
             } else {
                 d->beep_reason = BEEP_LV;
@@ -899,7 +914,7 @@ static void calculate_setpoint_target(data *d) {
         // b) motor current is small (we cannot assume vsag)
         // c) we have more than 20A per Volt of difference (we tolerate some amount of vsag)
         if ((vdelta > 2) || (abs_motor_current < 5) || (ratio > 1) ||
-            bms_is_fault_set(d->bms_fault, BMSF_CELL_UNDER_VOLTAGE)) {
+            bms_get_fault(d->bms_fault, BMSF_CELL_UNDER_VOLTAGE)) {
             if (d->motor.erpm > 0) {
                 d->setpoint_target = d->float_conf.tiltback_lv_angle;
             } else {
@@ -1426,16 +1441,17 @@ static void refloat_thd(void *arg) {
                 }
                 d->enable_upside_down = false;
                 d->state.darkride = false;
+
+                // Alert user if cells are out of balance, 10 seconds after disengaging
+                if (bms_get_fault(d->bms_fault, BMSF_CELL_BALANCE)) {
+                    beep_alert(d, 1, true);
+                    d->beep_reason = BEEP_CELL_BALANCE;
+                }
             }
 
-            if (bms_is_fault_set(d->bms_fault, BMSF_CONNECTION)) {
+            if (bms_get_fault(d->bms_fault, BMSF_CONNECTION)) {
                 beep_alert(d, 3, true);
                 d->beep_reason = BEEP_BMS_CONNECTION;
-            }
-
-            if (bms_is_fault_set(d->bms_fault, BMSF_CELL_BALANCE)) {
-                beep_alert(d, 3, true);
-                d->beep_reason = BEEP_CELL_BALANCE;
             }
 
             if (d->current_time - d->disengage_timer > 1800) {  // alert user after 30 minutes
@@ -2566,14 +2582,41 @@ static lbm_value ext_set_fw_version(lbm_value *args, lbm_uint argn) {
     return VESC_IF->lbm_enc_sym_true;
 }
 
-// Called from Lisp to pass in the fault code of the bms.
-static lbm_value ext_bms_set_fault(lbm_value *args, lbm_uint argn) {
-    if (argn != 1 || !VESC_IF->lbm_is_number(args[0])) {
-        return VESC_IF->lbm_enc_sym_eerror;
-    }
+// Called from Lisp to pass in values from the bms. If no prameters are called, return
+// tiltback_bms_enabled.
+static lbm_value ext_bms(lbm_value *args, lbm_uint argn) {
     data *d = (data *) ARG;
-    d->bms_fault = VESC_IF->lbm_dec_as_u32(args[0]);
-    return VESC_IF->lbm_enc_sym_true;
+    d->bms_fault = BMSF_NONE;
+
+    if (argn == 0 || !d->float_conf.tiltback_bms_enabled) {
+        return d->float_conf.tiltback_bms_enabled;
+    }
+
+    if (VESC_IF->lbm_dec_as_float(args[5]) > d->float_conf.tiltback_bms_msg) {
+        bms_set_fault(&d->bms_fault, BMSF_CONNECTION);
+        return d->float_conf.tiltback_bms_enabled;
+    }
+    if (VESC_IF->lbm_dec_as_float(args[0]) < d->float_conf.tiltback_cell_lv) {
+        bms_set_fault(&d->bms_fault, BMSF_CELL_UNDER_VOLTAGE);
+    }
+    if (VESC_IF->lbm_dec_as_float(args[1]) > d->float_conf.tiltback_cell_hv) {
+        bms_set_fault(&d->bms_fault, BMSF_CELL_OVER_VOLTAGE);
+    }
+    if (VESC_IF->lbm_dec_as_i32(args[2]) < d->float_conf.tiltback_cell_lt) {
+        bms_set_fault(&d->bms_fault, BMSF_CELL_UNDER_TEMP);
+    }
+    if (VESC_IF->lbm_dec_as_i32(args[3]) > d->float_conf.tiltback_cell_ht) {
+        bms_set_fault(&d->bms_fault, BMSF_CELL_OVER_TEMP);
+    }
+    if (VESC_IF->lbm_dec_as_i32(args[4]) > d->float_conf.tiltback_bms_ht) {
+        bms_set_fault(&d->bms_fault, BMSF_OVER_TEMP);
+    }
+    if (fabsf(VESC_IF->lbm_dec_as_float(args[0]) - VESC_IF->lbm_dec_as_float(args[1])) >
+        d->float_conf.tiltback_cell_bal) {
+        bms_set_fault(&d->bms_fault, BMSF_CELL_BALANCE);
+    }
+
+    return d->float_conf.tiltback_bms_enabled;
 }
 
 // Used to send the current or default configuration to VESC Tool.
@@ -2695,7 +2738,7 @@ INIT_FUN(lib_info *info) {
     VESC_IF->set_app_data_handler(on_command_received);
     VESC_IF->lbm_add_extension("ext-dbg", ext_dbg);
     VESC_IF->lbm_add_extension("ext-set-fw-version", ext_set_fw_version);
-    VESC_IF->lbm_add_extension("ext-bms-set-fault", ext_bms_set_fault);
+    VESC_IF->lbm_add_extension("ext-bms", ext_bms);
 
     return true;
 }

@@ -31,4 +31,6 @@ typedef enum {
     BMSF_CELL_BALANCE = 7
 } BMSFaultCode;
 
-bool bms_is_fault_set(uint32_t fault_mask, BMSFaultCode fault_code);
+bool bms_get_fault(uint32_t fault_mask, BMSFaultCode fault_code);
+
+void bms_set_fault(uint32_t *fault_mask, BMSFaultCode fault_code);

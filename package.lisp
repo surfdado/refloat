@@ -10,12 +10,21 @@
 
 (def version_major (first (sysinfo 'fw-ver)))
 (def version_minor (second (sysinfo 'fw-ver)))
-(if (or (eq (first (trap (get-bms-val 'bms-v-cell-min))) 'exit-ok) (or (>= version_major 7) (and (>= version_major 6) (>= version_minor 5)))) {
-    (loopwhile (and (< (get-bms-val 'bms-can-id) 0) (< (secs-since 0) 10.0)) (yield 1000000))
-    (if (>= (get-bms-val 'bms-can-id) 0) {
-        (import "src/bms.lisp" 'bms)
-        (read-eval-program bms)
-        (spawn bms-loop)
+
+; Setup thread for BMS Tiltback
+(if (eq (first (trap (get-bms-val 'bms-data-version))) 'exit-ok) {
+    (loopwhile-thd 50 t {
+        (if (and (>= (get-bms-val 'bms-can-id) 0) (ext-bms)) {
+            (var bms-temp-cell-max (get-bms-val 'bms-temp-cell-max))
+            (var bms-temp-cell-min bms-temp-cell-max)
+            (var bms-temp-mosfet -281)
+            (if (= (get-bms-val 'bms-data-version) 1) {
+                (setq bms-temp-cell-min (get-bms-val 'bms-temps-adc 1))
+                (setq bms-temp-mosfet (get-bms-val 'bms-temps-adc 3))
+            })
+            (ext-bms (get-bms-val 'bms-v-cell-min) (get-bms-val 'bms-v-cell-max) bms-temp-cell-min bms-temp-cell-max bms-temp-mosfet (get-bms-val 'bms-msg-age))
+        })
+        (sleep 0.2)
     })
 })
 
