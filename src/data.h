@@ -128,9 +128,10 @@ typedef struct {
     int rc_counter;
     float rc_current_target;
     float rc_current;
-
+    
     HapticFeedback haptic_feedback;
     DataRecord data_record;
+    uint32_t bms_fault;
 
     Konami flywheel_konami;
     Konami headlights_on_konami;
