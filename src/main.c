@@ -935,12 +935,13 @@ static void refloat_thd(void *arg) {
 
             pid_update(&d->pid, d->setpoint, &d->motor, &d->imu, &d->float_conf);
 
-            float booster_proportional = d->setpoint - d->brake_tilt.setpoint - d->imu.pitch;
-            booster_update(&d->booster, &d->motor, &d->float_conf, booster_proportional);
+            // Booster is disabled
+            //float booster_proportional = d->setpoint - d->brake_tilt.setpoint - d->imu.pitch;
+            //booster_update(&d->booster, &d->motor, &d->float_conf, booster_proportional);
 
             // Rate P and Booster are pitch-based (as opposed to balance pitch based)
             // They require to be filtered in, otherwise they'd cause a jerk
-            float pitch_based = d->pid.rate_p + d->booster.current;
+            float pitch_based = d->pid.rate_p;// + d->booster.current;
             if (d->softstart_pid_limit < d->motor.current_max) {
                 pitch_based = fminf(fabs(pitch_based), d->softstart_pid_limit) * sign(pitch_based);
                 d->softstart_pid_limit += d->softstart_ramp_step_size;
