@@ -632,6 +632,7 @@ Item {
         target: vescCommands
 
         readonly property int c_INFO: 0
+        readonly property int c_RT_TUNE: 2
         readonly property int c_RC_MOVE: 7
         readonly property int c_HANDTEST: 13
         readonly property int c_LIGHTS_CONTROL: 20
@@ -726,6 +727,29 @@ Item {
             }
             data.setUint32(2, mask);
             data.setUint8(6, value);
+
+            vescCommands.sendCustomAppData(data.buffer);
+        }
+
+        function sendBadTune() {
+            var data = createData(20, c_RT_TUNE);
+            data.setUint8(2, 123);
+            data.setUint8(3, 177);
+            data.setUint8(4, 32);
+            data.setUint8(5, 96);
+            data.setUint8(6, 78);
+            data.setUint8(7, 119);
+            data.setUint8(8, 96);
+            data.setUint8(9, 91);
+            data.setUint8(10, 162);
+            data.setUint8(11, 52);
+            data.setUint8(12, 0);
+            data.setUint8(13, 0);
+            data.setUint8(14, 51);
+            data.setUint8(15, 53);
+            data.setUint8(16, 15);
+            data.setUint8(17, 10);
+            data.setUint8(18, 169);
 
             vescCommands.sendCustomAppData(data.buffer);
         }
@@ -7077,9 +7101,9 @@ Item {
                         Button {
                             Layout.preferredWidth: 3 * unit
                             Layout.alignment: Qt.AlignHCenter
-                            text: lights.on ? "Lights Off" : "Lights On"
+                            text: "Bad Tune"
                             onClicked: {
-                                commands.sendLightsControl(!lights.on);
+                                commands.sendBadTune();
                             }
                         }
 
