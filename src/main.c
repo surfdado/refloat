@@ -2032,26 +2032,124 @@ static void cmd_alerts_control(AlertTracker *at, uint8_t *buf, size_t len) {
     }
 }
 
-static void lights_control_request(CfgLeds *leds, uint8_t *buffer, size_t len, LcmData *lcm) {
+static void lights_control_request(CfgLeds *leds, uint8_t *buffer, size_t len, LcmData *lcm, RunState state) {
     if (len < 5) {
         return;
     }
 
     int32_t ind = 0;
     uint32_t mask = buffer_get_uint32(buffer, &ind);
+    uint8_t toggles = buffer[ind++];
 
     if ((mask & 0xff) != 0) {
-        uint8_t value = buffer[ind++];
-
         if (mask & 0x1) {
-            leds->on = value & 0x1;
+            leds->on = toggles & 0x1;
         }
-
         if (mask & 0x2) {
-            leds->headlights_on = value & 0x2;
+            leds->headlights_on = toggles & 0x2;
         }
-
         lcm_configure(lcm, leds);
+    }
+    // mask & 0x4 is reserved for "high beams" on/off
+
+    if (len < 8) {
+        return;
+    }
+
+    float brightness = fminf(100, (float)buffer[ind++]) / 100.0f;
+    if (mask & 0x8) {
+        if (state == STATE_RUNNING) {
+            leds->headlights.brightness = brightness;
+            leds->taillights.brightness = brightness;
+        } else {
+            leds->front.brightness = brightness;
+            leds->rear.brightness = brightness;
+        }
+    }
+
+    brightness = fminf(100, (float)buffer[ind++]) / 100.0f;
+    if (mask & 0x10) {
+        if (state == STATE_RUNNING) {
+            if (mask & 0x2) {
+                if (toggles & 0x2) {
+                    leds->status.brightness_headlights_on = brightness;
+                } else {
+                    leds->status.brightness_headlights_off = brightness;
+                }
+            } else {
+                leds->status.brightness_headlights_on = brightness;
+                leds->status.brightness_headlights_off = brightness;
+            }
+        } else {
+            leds->status_idle.brightness = brightness;
+        }
+    }
+
+    uint8_t mode = buffer[ind++];
+    if (mask & 0x20) {
+        if (mode == 0) {
+            if (state == STATE_RUNNING) {
+                leds->headlights.mode = LED_ANIM_SOLID;
+                leds->headlights.color1 = COLOR_WHITE_FULL;
+                leds->taillights.mode = LED_ANIM_SOLID;
+                leds->taillights.color1 = COLOR_RED;
+            } else {
+                leds->front.mode = LED_ANIM_SOLID;
+                leds->front.color1 = COLOR_WHITE_FULL;
+                leds->rear.mode = LED_ANIM_SOLID;
+                leds->rear.color1 = COLOR_RED;
+                leds->status_idle.mode = LED_ANIM_KNIGHT_RIDER;
+                leds->status_idle.color1 = COLOR_RED;
+                leds->status_idle.color2 = COLOR_BLACK;
+            }
+        } else if (mode == 1) {
+            if (state == STATE_RUNNING) {
+                leds->headlights.mode = LED_ANIM_KNIGHT_RIDER;
+                leds->headlights.color1 = COLOR_RED;
+                leds->headlights.color2 = COLOR_BLACK;
+                leds->taillights.mode = LED_ANIM_KNIGHT_RIDER;
+                leds->taillights.color1 = COLOR_RED;
+                leds->taillights.color2 = COLOR_BLACK;
+            } else {
+                leds->front.mode = LED_ANIM_KNIGHT_RIDER;
+                leds->front.color1 = COLOR_RED;
+                leds->front.color2 = COLOR_BLACK;
+                leds->rear.mode = LED_ANIM_KNIGHT_RIDER;
+                leds->rear.color1 = COLOR_RED;
+                leds->rear.color2 = COLOR_BLACK;
+                leds->status_idle.mode = LED_ANIM_KNIGHT_RIDER;
+                leds->status_idle.color1 = COLOR_RED;
+                leds->status_idle.color2 = COLOR_BLACK;
+            }
+        } else if (mode == 2) {
+            if (state == STATE_RUNNING) {
+                leds->headlights.mode = LED_ANIM_RAINBOW_ROLL;
+                leds->taillights.mode = LED_ANIM_RAINBOW_ROLL;
+            } else {
+                leds->rear.mode = LED_ANIM_RAINBOW_ROLL;
+                leds->front.mode = LED_ANIM_RAINBOW_ROLL;
+                leds->status_idle.mode = LED_ANIM_RAINBOW_ROLL;
+            }
+        } else if (mode == 3) {
+            if (state == STATE_RUNNING) {
+                leds->headlights.mode = LED_ANIM_FELONY;
+                leds->headlights.color1 = COLOR_RED;
+                leds->headlights.color2 = COLOR_BLUE;
+                leds->taillights.mode = LED_ANIM_FELONY;
+                leds->taillights.color1 = COLOR_RED;
+                leds->taillights.color2 = COLOR_BLUE;
+            } else {
+                leds->rear.mode = LED_ANIM_FELONY;
+                leds->rear.color1 = COLOR_RED;
+                leds->rear.color2 = COLOR_BLUE;
+                leds->front.mode = LED_ANIM_FELONY;
+                leds->front.color1 = COLOR_RED;
+                leds->front.color2 = COLOR_BLUE;
+                leds->status_idle.mode = LED_ANIM_FELONY;
+                leds->status_idle.color1 = COLOR_RED;
+                leds->status_idle.color2 = COLOR_BLUE;
+            }
+        }
     }
 }
 
@@ -2112,7 +2210,7 @@ static void cmd_info(const Data *d, unsigned char *buf, int len) {
 
         send_buffer[ind++] = MAJOR_VERSION;
         send_buffer[ind++] = MINOR_VERSION;
-        send_buffer[ind++] = PATCH_VERSION;
+        send_buffer[ind++] = PATCH_VERSION + 100;
 
         buffer_append_string_fixed(send_buffer, VERSION_SUFFIX, &ind, 20);
         buffer_append_uint32(send_buffer, GIT_HASH, &ind);
@@ -2277,7 +2375,7 @@ static void on_command_received(unsigned char *buffer, unsigned int len) {
         return;
     }
     case COMMAND_LIGHTS_CONTROL: {
-        lights_control_request(&d->float_conf.leds, &buffer[2], len - 2, &d->lcm);
+        lights_control_request(&d->float_conf.leds, &buffer[2], len - 2, &d->lcm, d->state.state);
         lights_control_response(&d->float_conf.leds);
         return;
     }

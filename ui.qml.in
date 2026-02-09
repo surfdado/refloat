@@ -185,7 +185,7 @@ Item {
     Timer {
         running: lights.enabled
         repeat: true
-        interval: 250
+        interval: 1000
         triggeredOnStart: true
         onTriggered: {
             commands.sendLightsControl();
