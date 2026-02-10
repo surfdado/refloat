@@ -181,7 +181,7 @@ Item {
         }
     }
 
-    // 4Hz timer to poll for lights status if enabled
+    // 1Hz timer to poll for lights status if enabled
     Timer {
         running: lights.enabled
         repeat: true
@@ -724,8 +724,10 @@ Item {
                     value |= 0b10;
                 }
             }
-            data.setUint32(2, mask);
-            data.setUint8(6, value);
+            if (mask != 0) {
+                data.setUint32(2, mask);
+                data.setUint8(6, value);
+            }
 
             vescCommands.sendCustomAppData(data.buffer);
         }
