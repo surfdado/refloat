@@ -846,6 +846,8 @@ static void refloat_thd(void *arg) {
             d->beep_reason = BEEP_FW_FAULT;
         }
 
+        d->last_fw_fault_code = VESC_IF->mc_get_fault();
+
         // Control Loop State Logic
         switch (d->state.state) {
         case (STATE_STARTUP):
@@ -1336,11 +1338,12 @@ static void cmd_send_all_data(Data *d, unsigned char mode) {
     buffer[ind++] = 101;  // Package ID
     buffer[ind++] = COMMAND_GET_ALLDATA;
 
-    mc_fault_code fault = VESC_IF->mc_get_fault();
-    if (fault != FAULT_CODE_NONE) {
-        buffer[ind++] = 69;
-        buffer[ind++] = fault;
-    } else {
+    uint8_t fault = d->last_fw_fault_code;
+    uint8_t beep_reason = d->beep_reason;
+    if ((fault != FAULT_CODE_NONE) || (beep_reason > 15)) {
+        mode = 11;
+    }
+    {
         buffer[ind++] = mode;
 
         // RT Data
@@ -1356,8 +1359,7 @@ static void cmd_send_all_data(Data *d, unsigned char mode) {
         if (d->state.mode == MODE_HANDTEST) {
             state |= 0x8;
         }
-        buffer[ind++] = (state & 0xF) + (d->beep_reason << 4);
-        d->beep_reason = BEEP_NONE;
+        buffer[ind++] = (state & 0xF) + (beep_reason << 4);
 
         buffer[ind++] = d->footpad.adc1 * 50;
         buffer[ind++] = d->footpad.adc2 * 50;
@@ -1406,13 +1408,21 @@ static void cmd_send_all_data(Data *d, unsigned char mode) {
             buffer[ind++] = fmaxf(0, fminf(125, VESC_IF->mc_get_battery_level(NULL) * 100)) * 2;
             // ind = 55
         }
-        if (mode >= 4) {
+        if (mode == 4) {
             // make charge current and voltage available in mode 4
             buffer_append_float16(buffer, d->charging.current, 10, &ind);
             buffer_append_float16(buffer, d->charging.voltage, 10, &ind);
             // ind = 59
         }
+
+        if (mode >= 11) {
+            // Beep reason above 15? Or a VESC Fault? Send them here:
+            buffer[ind++] = d->beep_reason;
+            buffer[ind++] = fault;
+        }
     }
+    d->beep_reason = BEEP_NONE;
+    d->last_fw_fault_code = FAULT_CODE_NONE;
 
     SEND_APP_DATA(buffer, bufsize, ind);
 }

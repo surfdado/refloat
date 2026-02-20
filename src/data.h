@@ -89,6 +89,9 @@ typedef struct {
     int beep_reason;
     bool beeper_enabled;
 
+    // Last Fault
+    mc_fault_code last_fw_fault_code;
+
     // Config values
     uint32_t loop_time_us;
     float startup_pitch_trickmargin, startup_pitch_tolerance;
