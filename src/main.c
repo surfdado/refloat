@@ -1264,7 +1264,6 @@ enum {
     COMMAND_CFG_RESTORE = 5,  // restore config from eeprom
     COMMAND_TUNE_OTHER = 6,  // make runtime changes to startup/etc
     COMMAND_RC_MOVE = 7,  // move motor while board is idle
-    COMMAND_BOOSTER = 8,  // change booster settings
     COMMAND_PRINT_INFO = 9,  // print verbose info
     COMMAND_GET_ALLDATA = 10,  // send all data, compact
     COMMAND_EXPERIMENT = 11,  // generic cmd for sending data, used for testing/tuning new features
@@ -1472,33 +1471,6 @@ static void cmd_handtest(Data *d, unsigned char *cfg) {
 static void cmd_experiment(Data *d, unsigned char *cfg) {
     unused(d);
     unused(cfg);
-}
-
-static void cmd_booster(Data *d, unsigned char *cfg) {
-    int h1, h2;
-    split(cfg[0], &h1, &h2);
-    d->float_conf.booster_angle = h1 + 5;
-    d->float_conf.booster_ramp = h2 + 2;
-
-    split(cfg[1], &h1, &h2);
-    if (h1 == 0) {
-        d->float_conf.booster_current = 0;
-    } else {
-        d->float_conf.booster_current = 8 + h1 * 2;
-    }
-
-    split(cfg[2], &h1, &h2);
-    d->float_conf.brkbooster_angle = h1 + 5;
-    d->float_conf.brkbooster_ramp = h2 + 2;
-
-    split(cfg[3], &h1, &h2);
-    if (h1 == 0) {
-        d->float_conf.brkbooster_current = 0;
-    } else {
-        d->float_conf.brkbooster_current = 8 + h1 * 2;
-    }
-
-    beep_alert(d, 1, false);
 }
 
 /**
@@ -2388,14 +2360,6 @@ static void on_command_received(unsigned char *buffer, unsigned int len) {
     }
     case COMMAND_HANDTEST: {
         cmd_handtest(d, &buffer[2]);
-        return;
-    }
-    case COMMAND_BOOSTER: {
-        if (len == 6) {
-            cmd_booster(d, &buffer[2]);
-        } else {
-            log_error("Command data length incorrect: %u", len);
-        }
         return;
     }
     case COMMAND_FLYWHEEL: {
