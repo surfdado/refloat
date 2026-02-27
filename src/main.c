@@ -580,7 +580,7 @@ static void calculate_setpoint_target(Data *d) {
         } else {
             d->setpoint_target = -d->float_conf.tiltback_duty_angle;
         }
-        if (d->suppress_tiltback) {
+        if (d->suppress_tiltback || (d->motor.batt_current < 0)) {
             d->setpoint_target = 0;
         }
 
@@ -628,6 +628,9 @@ static void calculate_setpoint_target(Data *d) {
         } else {
             d->setpoint_target = -d->float_conf.tiltback_hv_angle;
         }
+        if (d->suppress_tiltback || (d->motor.batt_current < 0)) {
+            d->setpoint_target = 0;
+        }
         d->state.sat = SAT_PB_ERROR;
     } else if (d->motor.mosfet_temp > d->motor.mosfet_temp_max) {
         // Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
@@ -639,7 +642,7 @@ static void calculate_setpoint_target(Data *d) {
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_lv_angle;
             }
-            if (d->suppress_tiltback) {
+            if (d->suppress_tiltback || (d->motor.batt_current < 0)) {
                 d->setpoint_target = 0;
             }
             d->state.sat = SAT_PB_TEMPERATURE;
@@ -657,7 +660,7 @@ static void calculate_setpoint_target(Data *d) {
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_lv_angle;
             }
-            if (d->suppress_tiltback) {
+            if (d->suppress_tiltback || (d->motor.batt_current < 0)) {
                 d->setpoint_target = 0;
             }
             d->state.sat = SAT_PB_TEMPERATURE;
@@ -682,7 +685,7 @@ static void calculate_setpoint_target(Data *d) {
         } else {
             d->setpoint_target = -d->float_conf.tiltback_lv_angle;
         }
-        if (d->suppress_tiltback) {
+        if (d->suppress_tiltback || (d->motor.batt_current < 0)) {
             d->setpoint_target = 0;
         }
         d->state.sat = SAT_PB_TEMPERATURE;
@@ -709,7 +712,7 @@ static void calculate_setpoint_target(Data *d) {
             } else {
                 d->setpoint_target = -d->float_conf.tiltback_lv_angle;
             }
-            if (d->suppress_tiltback) {
+            if (d->suppress_tiltback || (d->motor.batt_current < 0)) {
                 d->setpoint_target = 0;
             }
 
@@ -724,6 +727,9 @@ static void calculate_setpoint_target(Data *d) {
             d->setpoint_target = d->float_conf.tiltback_duty_angle;
         } else {
             d->setpoint_target = -d->float_conf.tiltback_duty_angle;
+        }
+        if (d->suppress_tiltback || (d->motor.batt_current < 0)) {
+            d->setpoint_target = 0;
         }
         d->beep_reason = BEEP_SPEED;
         d->state.sat = SAT_PB_SPEED;
