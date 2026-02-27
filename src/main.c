@@ -1678,7 +1678,9 @@ static void cmd_tune_defaults(Data *d) {
  * cmd_runtime_tune_tilt: Extract settings from 20byte message but don't write to EEPROM!
  */
 static void cmd_runtime_tune_tilt(Data *d, unsigned char *cfg, int len) {
-    unused(len);
+    if (len < 5) {
+        return;
+    }
     unsigned int flags = cfg[0];
     bool duty_beep = flags & 0x1;
     d->float_conf.is_dutybeep_enabled = duty_beep;
@@ -1689,16 +1691,23 @@ static void cmd_runtime_tune_tilt(Data *d, unsigned char *cfg, int len) {
         d->float_conf.tiltback_return_speed = retspeed / 10;
         d->tiltback_return_step_size = d->float_conf.tiltback_return_speed / d->float_conf.hertz;
     }
-    d->float_conf.tiltback_duty = (float) cfg[2] / 100.0;
-    d->float_conf.tiltback_duty_angle = (float) cfg[3] / 10.0;
-    d->float_conf.tiltback_duty_speed = (float) cfg[4] / 10.0;
+    d->float_conf.tiltback_duty = fmaxf(0.3, (float) cfg[2] / 100.0);
+    d->float_conf.tiltback_duty_angle = fminf(10, (float) cfg[3] / 10.0);
+    d->float_conf.tiltback_duty_speed = fminf(10, (float) cfg[4] / 10.0);
+    d->tiltback_duty_step_size = d->float_conf.tiltback_duty_speed / d->float_conf.hertz;
+
+    if (len >= 6) {
+        d->float_conf.tiltback_speed = cfg[5];
+    }
 }
 
 /**
  * cmd_runtime_tune_haptic: Extract settings from 20byte message but don't write to EEPROM!
  */
 static void cmd_runtime_tune_haptic(Data *d, unsigned char *cfg, int len) {
-    unused(len);
+    if (len < 11) {
+        return;
+    }
     // using one byte, frequencies can be 350..605Hz
     d->float_conf.haptic.duty.frequency = cfg[0] + 350;
     d->float_conf.haptic.duty.strength = ((float) cfg[1]) / 10;
@@ -1712,6 +1721,8 @@ static void cmd_runtime_tune_haptic(Data *d, unsigned char *cfg, int len) {
     d->float_conf.haptic.min_strength = ((float) cfg[8]) / 100;
     d->float_conf.haptic.strength_curvature = ((float) cfg[9]) / 100;
     d->float_conf.haptic.max_strength_speed = ((float) cfg[10]);
+
+    haptic_feedback_configure(&d->haptic_feedback, &d->float_conf);
 }
 
 /**
@@ -1719,6 +1730,9 @@ static void cmd_runtime_tune_haptic(Data *d, unsigned char *cfg, int len) {
  * EEPROM!
  */
 static void cmd_runtime_tune_other(Data *d, unsigned char *cfg, int len) {
+    if (len < 12) {
+        return;
+    }
     unsigned int flags = cfg[0];
     d->beeper_enabled = ((flags & 0x2) == 2);
     d->float_conf.fault_reversestop_enabled = ((flags & 0x4) == 4);
